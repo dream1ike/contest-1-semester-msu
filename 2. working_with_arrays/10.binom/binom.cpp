@@ -12,14 +12,13 @@ int get_num_from_file(const char* filename)
     }
     return x;
 }
-double* binom (int x)
+double* binom (int size)
 {
-    int size = x+1;
     double* arr = (double*)malloc(sizeof(double) * size);
     if(arr)
     {
         arr[0] = 1;
-        arr[1] = 1;
+        if (size >= 2) arr[1] = 1;
         arr[size-1] = 1;
         double temp_1 = 1, temp_2 = 1;
         for(int i = 2; i < size; i++)
@@ -69,7 +68,7 @@ int main(int argc, const char* argv[])
     {
         int x = get_num_from_file(argv[1]);
         int size = x+1;
-        double* arr = binom(x);
+        double* arr = binom(size);
         if (x == -1)
         {
              write_to_file (argv[2], arr, 0);
