@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #pragma warning(disable:4996)
-double get_num_from_file(const char* filename)
+int get_num_from_file(const char* filename)
 {
     FILE* fin = fopen(filename, "r");
     int x = 0;
