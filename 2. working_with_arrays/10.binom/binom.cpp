@@ -7,7 +7,11 @@ int get_num_from_file(const char* filename)
     int x = 0;
     if (fin)
     {
-        if (fscanf(fin, "%d", &x) < 0) return -1;
+        if (fscanf(fin, "%d", &x) < 0) 
+        {
+            fclose(fin);
+            return -1;
+        }
         fclose(fin);
     }
     return x;
@@ -68,12 +72,13 @@ int main(int argc, const char* argv[])
     {
         int x = get_num_from_file(argv[1]);
         int size = x+1;
-        double* arr = binom(size);
+        double* arr = NULL;
         if (x == -1)
         {
              write_to_file (argv[2], arr, 0);
              return 0;
         }
+        arr = binom(size);
         write_to_file(argv[2], arr, size);
         free(arr);
     }

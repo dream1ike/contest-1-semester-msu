@@ -14,17 +14,23 @@ long int reverse_num(long int x)
     }
     return n;
 }
+
 int get_num_from_file(const char* filename)
 {
     FILE* fin = fopen(filename, "r");
     int x = 0;
     if (fin)
     {
-        if (fscanf(fin, "%d", &x) < 0) return -1;
+        if (fscanf(fin, "%d", &x) < 0) 
+        {
+            fclose(fin);
+            return -1;
+        }
         fclose(fin);
     }
     return x;
 }
+
 int mirrors(int x, const char* filename)
 {
     FILE* fout = fopen(filename, "w");
@@ -33,16 +39,18 @@ int mirrors(int x, const char* filename)
         if (x <= 0)
         {
             fprintf(fout, "0");
+            fclose(fout);
             return 0;
         }
         for(long int j = 1; j <=x; j++)
         {
             fprintf(fout, "%ld ", ((j / 256) << 24)+ (reverse_num(j/256) << 16) + ((j % 256) << 8) + reverse_num(j % 256));
         }
-        }
         fclose(fout);
-        return 0;
     }
+    return 0;
+}
+
 
 int main(int argc, const char* argv[])
 {
