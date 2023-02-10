@@ -44,7 +44,6 @@ double* read_from_file (const char* filename, int* size)
                     if (temp)
                     {
                         arr = temp;
-                        free(temp);
                     }
                 }
             }

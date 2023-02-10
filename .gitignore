@@ -1,0 +1,4 @@
+#Ignoring all .txt files and saves only .c
+*.txt
+a.out
+*.dSYM/
