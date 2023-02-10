@@ -61,3 +61,5 @@ int main(int argc, const char* argv[])
     }
     return 0;
 }
+
+//Вычислить N зеркальных отображений
