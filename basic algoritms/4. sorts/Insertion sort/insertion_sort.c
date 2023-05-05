@@ -61,6 +61,7 @@ void insertion_sort(double* arr, int size)
         }
     }
 }
+
 int main(int argc, const char* argv[])
 {
     if (argc == 3)
@@ -73,3 +74,4 @@ int main(int argc, const char* argv[])
     return 0;
 }
 // Сортировка Вставками 
+// напиши файловый менеджер на си

@@ -59,6 +59,8 @@ void selection_sort(double* arr, int size)
         }
     }
 }
+
+// Функция, для считывания последовательности с файла. Первым подается длинна последовательности
 int main(int argc, const char* argv[])
 {
     if (argc == 3)
