@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 int str_to_int(char* conjunct, int numberofvar) // массив символов преобразует в число, где каждый бит - переменная
 {
@@ -79,7 +80,7 @@ int calc_self_duality(int sizeofarr, int* polinom, int numberofvar) // осно�
     {
         int polinom1 = calc_polinom(polinom, set, sizeofarr);
         int polinom2 = calc_polinom(polinom, number_of_sets - set - 1, sizeofarr); 
-        printf("polinom1 = [%d]\npolinom2 = [%d]\n\n", polinom1, polinom2);
+        //printf("polinom1 = [%d]\npolinom2 = [%d]\n\n", polinom1, polinom2);
         if (polinom1 == polinom2) return 0;
     }
     return 1;
@@ -92,7 +93,6 @@ void calc_and_write_table(int sizeofarr, int* polinom, int numberofvar)// test_f
     {
         printf("%d", calc_polinom(polinom, high - 1 - set, sizeofarr));
     }
-    printf("\n\n");
     for (int set = high/2; set < high; set++)
     {
         printf("%d", calc_polinom(polinom, high - 1 - set, sizeofarr));
@@ -111,15 +111,19 @@ void write_to_file(const char* filename, int answer)
 
 int main(int argc, const char* argv[])
 {
+    clock_t start_time = clock();
     if (3)
     {
         int sizeofarr = 0;
         int numberofarr = 0;
         int* polinom = read_polinom("in.txt", &sizeofarr, &numberofarr);
         int answer = calc_self_duality(sizeofarr, polinom, numberofarr);
-        calc_and_write_table(sizeofarr, polinom, numberofarr);
+        // calc_and_write_table(sizeofarr, polinom, numberofarr);
         write_to_file("out.txt", answer);
         free(polinom);
     }
+    clock_t end_time = clock(); 
+    double elapsed_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+     printf("Elapsed time: %f seconds\n", elapsed_time);
     return 0;
 } 
