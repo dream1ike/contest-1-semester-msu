@@ -10,17 +10,18 @@ char** read_from_file(const char* filename, int* sizeofconjunct, int* sizeofpoly
 	if (fin)
 	{
 		char trash = 'T';
-		fscanf(fin, "%d", &trash);
+		fscanf(fin, "%c", &trash);
+		fscanf(fin, "%c", &trash);
 		fscanf(fin, "%d", sizeofconjunct);
 		fscanf(fin, "%d", sizeofpolynom);
 		fscanf(fin, "%c", &trash);
 		polinom = (char**)malloc(sizeof(char*) * (*sizeofpolynom)); // выделяем память под полином
-		for (int i = 0; i < sizeofpolynom; i++)
+		for (int i = 0; i < *sizeofpolynom; i++)
 		{
 			polinom[i] = (char*)malloc(sizeof(char) * (*sizeofconjunct)); // выделяем память под конъюнкт
-			for (int j = 0; j < sizeofconjunct; j++)
+			for (int j = 0; j < *sizeofconjunct; j++)
 			{
-				fscanf(fin, "%c", &polinom[i]);
+				fscanf(fin, "%c", &polinom[i][j]);
 			}
 			fscanf(fin, "%c", &trash); // пропускаем пробел
 			fscanf(fin, "%c", &trash); // пропускаем коэффицент, так как он постоянно 1
@@ -30,9 +31,47 @@ char** read_from_file(const char* filename, int* sizeofconjunct, int* sizeofpoly
 	return polinom;
 }
 
+void free_two_demensional_char_arr(char** arr, int sizeofarr)
+{
+	for (int i = 0; i < sizeofarr; i++) // очистка массива
+		{
+			free(arr[i]);
+		}
+		free(arr);
+}
+
+
+void generate_sets(int sizeofconjunct)
+{
+	char* set = (char*)malloc(sizeof(char) * (sizeofconjunct));
+	for (int i = 0; i < sizeofconjunct; i++)
+	{
+		set[i] = '0';
+		printf("%c", set[i]);
+	}
+	
+	printf("\n");
+
+}
 int main(int argc, char* argv[]) 
 {
-	
+	if (argc == 3)
+	{
+		int sizeofpolynom, sizeofconjunct;
+		FILE* fout = fopen(argv[2], "w");
+		char** arr = read_from_file(argv[1], &sizeofconjunct, &sizeofpolynom);
+		fprintf(fout, "2 %d %d\n", sizeofconjunct, sizeofpolynom);
+		for (int i = 0; i < sizeofpolynom; i++)
+		{
+			for (int j = 0; j < sizeofconjunct; j++)
+			{
+				fprintf(fout, "%c", arr[i][j]);
+			}
+			fprintf(fout, " 1\n");
+		}
+		free_two_demensional_char_arr(arr, sizeofpolynom);
+		generate_sets(3);
+	}
 	return 0;
 }
 
