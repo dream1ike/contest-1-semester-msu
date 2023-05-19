@@ -40,54 +40,90 @@ void free_two_demensional_char_arr(char** arr, int sizeofarr)
 		free(arr);
 }
 
-char* decToBinary(int n, int size) {
-    char* binaryNum = malloc(size * sizeof(char));
-    
+void decToBinary(int n, int size, char* binaryNum) {
+
     // инициализируем массив нулями
     for (int i = 0; i < size; i++) {
-        binaryNum[i] = 0;
+        binaryNum[i] = 48; // ASCII код символа '0'
     }
-    
-    int i = 0;
-    while (n > 0) {
-        binaryNum[i] = n & 1;
-        n = 1 << n;
-        i++;
+
+    int i = size - 1;
+    while (n > 0 && i >= 0) {
+        binaryNum[i] += (n & 1); 
+        n = n >> 1; 
+        i--;
     }
-    
-    return binaryNum;
+
 }
 
-void generate_sets(int sizeofconjunct)
+void create_mirror_set(int sizeofconjunct, char* set)
 {
-	char* set = (char*)malloc(sizeof(char) * (sizeofconjunct));
 	for (int i = 0; i < sizeofconjunct; i++)
 	{
-		set[i] = '0';
-		printf("%c", set[i]);
+		if (set[i] == '1') set[i] = '0';
+		else set[i] = '1';
 	}
-	
-	printf("\n");
-
 }
+
+int calc_conjunct(char* conjunct, int sizeofconjunct, char* set)
+{
+	for (int i = 0; i < sizeofconjunct; i++)
+	{
+		if (conjunct[i] == '1' && set[i] != '1') return 0;
+	}
+	return 1;
+}
+
+int calc_polynom(int sizeofconjunct, int sizeofpolynom, char** polynom, char* set)
+{
+	int answer = 0;
+	for (int i = 0; i < sizeofpolynom; i++)
+	{
+		answer = answer ^ calc_conjunct(polynom[i], sizeofconjunct, set);
+	}
+	return answer;
+}
+
+int calc_self_duality(int sizeofconjunct, int sizeofpolynom, char** polynom)
+{
+	double numberofsets = pow(2, (double)sizeofconjunct);
+	char* set = (char*)malloc(sizeofconjunct * sizeof(char)); // набор, на котором мы проверяем полином
+	int f_set, mirror_f_set; // значения функции на наборе и на зеркальном наборе
+	for(int i = 0; i < numberofsets; i++)
+	{
+		decToBinary(i,sizeofconjunct, set);
+		f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+		create_mirror_set(sizeofconjunct, set);
+		mirror_f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+		if (f_set != mirror_f_set) 
+		{
+			free(set);
+			return 0;
+		}
+	}
+	free(set);
+	return 1;
+}
+
+void write_number_to_file(const char* filename, int number)
+{
+	FILE* fout = fopen(filename, "w");
+	if (fout)
+	{
+		fprintf(fout, "%d", number);
+		fclose(fout);
+	}
+}
+
 int main(int argc, char* argv[]) 
 {
 	if (argc == 3)
 	{
 		int sizeofpolynom, sizeofconjunct;
-		FILE* fout = fopen(argv[2], "w");
-		char** arr = read_from_file(argv[1], &sizeofconjunct, &sizeofpolynom);
-		fprintf(fout, "2 %d %d\n", sizeofconjunct, sizeofpolynom);
-		for (int i = 0; i < sizeofpolynom; i++)
-		{
-			for (int j = 0; j < sizeofconjunct; j++)
-			{
-				fprintf(fout, "%c", arr[i][j]);
-			}
-			fprintf(fout, " 1\n");
-		}
-		free_two_demensional_char_arr(arr, sizeofpolynom);
-		generate_sets(3);
+		char** polynom = read_from_file(argv[1], &sizeofconjunct, &sizeofpolynom);
+		int answer = calc_self_duality(sizeofconjunct, sizeofpolynom, polynom);
+		write_number_to_file(argv[2], answer);
+		free_two_demensional_char_arr(polynom, sizeofpolynom);
 	}
 	return 0;
 }
