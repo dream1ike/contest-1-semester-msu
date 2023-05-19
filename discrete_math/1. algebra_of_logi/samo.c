@@ -40,6 +40,23 @@ void free_two_demensional_char_arr(char** arr, int sizeofarr)
 		free(arr);
 }
 
+char* decToBinary(int n, int size) {
+    char* binaryNum = malloc(size * sizeof(char));
+    
+    // инициализируем массив нулями
+    for (int i = 0; i < size; i++) {
+        binaryNum[i] = 0;
+    }
+    
+    int i = 0;
+    while (n > 0) {
+        binaryNum[i] = n & 1;
+        n = 1 << n;
+        i++;
+    }
+    
+    return binaryNum;
+}
 
 void generate_sets(int sizeofconjunct)
 {
