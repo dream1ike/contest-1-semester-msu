@@ -5,6 +5,8 @@
 #include <string.h>
 #pragma warning(disable:4996)
 
+char* copy_char_arr(char* original, int size);
+
 void free_two_demensional_char_arr(char** arr, int sizeofarr); // done
 
 char* read_from_file(const char* filename, int* numberofval, int* numberofone); // done
@@ -25,31 +27,54 @@ int main(int argc, const char* argv[])
     if (1)
     {
         int numberofval, numberofone;
-        char* vec_of_val = read_from_file("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file2.txt", &numberofval, &numberofone);
+        char* vec_of_val = read_from_file("in.txt", &numberofval, &numberofone);
         int table_size = numberofone;
-		// вывод входной строки
-		int size = 1 << numberofval;
-		printf("%d\n", numberofone);
+
+
+        // вывод входной строки
+        int size = 1 << numberofval;
+        printf("%d\n", numberofone);
         for (int i = 0; i < size; i++)
         {
             printf("%c", vec_of_val[i]);
         }
         printf("\n\n");
-		// конец вывода
+        // конец вывода
+
+
         char** vec_table = find_one_and_group(numberofval, vec_of_val, numberofone);
-		int result_size = 0;
-        char flag = 'C';
-		while (flag != 'S') char** vec_table = quine_minimizing(vec_table, table_size, numberofval, &result_size, &flag);
-		// вывод массива
-        for(int i = 0; i < result_size; i++)
+
+        // вывод массива единичек
+        for (int i = 0; i < numberofone; i++)
         {
-            for(int j = 0; j < numberofval; j++)
+            for (int j = 0; j < numberofval; j++)
             {
                 printf("%c", vec_table[i][j]);
             }
-            printf("\n");
+            printf(" ones: %c\n", vec_table[i][numberofval]);
         }
-		// конец вывода массива
+        printf("\n\n");
+        // конец вывода
+
+        int result_size = 0;
+        char flag = 'C';
+        while (flag != 'S')
+        {
+            vec_table = quine_minimizing(vec_table, table_size, numberofval, &result_size, &flag);
+            table_size = result_size;
+        }
+
+        // вывод массива
+        for (int i = 0; i < result_size; i++)
+        {
+            for (int j = 0; j < numberofval; j++)
+            {
+                printf("%c", vec_table[i][j]);
+            }
+            printf(" ones: %c\n", vec_table[i][numberofval]);
+        }
+        // конец вывода массива
+
 
         free_two_demensional_char_arr(vec_table, table_size);
     }
@@ -59,48 +84,64 @@ int main(int argc, const char* argv[])
 char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size, char* flag)
 {
     *flag = 'S';
-	char** result = NULL;
-	*result_size = 0;
-	int differences = 0;
-	for(int i = 0; i < table_size; i++)
-	{
-		for (int j = i; j < table_size; j++)
-		{
-			if (abs(vec_table[i][numberofval] - vec_table[j][numberofval]) == 1) // соседние (по единичкам) подгруппы
-			{
-				differences = compare_two_vectors(vec_table[i], vec_table[j], numberofval);
-				if (differences == 1)
-				{
+    char** result = NULL;
+    *result_size = 0;
+    int differences = 0;
+    for (int i = 0; i < table_size; i++)
+    {
+        for (int j = i + 1; j < table_size; j++)
+        {
+            if (abs(vec_table[i][numberofval] - vec_table[j][numberofval]) <= 1) // соседние (по единичкам) подгруппы
+            {
+                differences = compare_two_vectors(vec_table[i], vec_table[j], numberofval);
+                if (differences == 1)
+                {
                     *flag = 'C';
-					*result_size += 1;
-					result = (char**)realloc(result, (*result_size) * sizeof(char*));
-					result[*result_size - 1] = merge_vectors(vec_table[i], vec_table[j], numberofval);
-				}
-			}
-		}
-	}
+                    *result_size += 1;
+                    result = (char**)realloc(result, (*result_size) * sizeof(char*));
+                    result[*result_size - 1] = merge_vectors(vec_table[i], vec_table[j], numberofval);
+                }
+                if (differences == 0)
+                {
+                    *flag = 'C';
+                    *result_size += 1;
+                    result = (char**)realloc(result, (*result_size) * sizeof(char*));
+                    result[*result_size - 1] = copy_char_arr(vec_table[i], numberofval + 1);
+
+                }
+            }
+        }
+    }
     if (*flag == 'S')
     {
         *result_size = table_size;
         return vec_table;
     }
-	free_two_demensional_char_arr(vec_table, table_size);
-	return result;
+    free_two_demensional_char_arr(vec_table, table_size);
+    return result;
+}
+
+
+char* copy_char_arr(char* original, int size)
+{
+    char* result = (char*)malloc(sizeof(char*) * size);
+    for (int i = 0; i < size; i++) result[i] = original[i];
+    return result;
 }
 
 void free_two_demensional_char_arr(char** arr, int sizeofarr) // done
 {
-	for (int i = 0; i < sizeofarr; i++) // очистка массива
-	{
-		if (arr[i]) free(arr[i]);
-	}
-	free(arr);
+    for (int i = 0; i < sizeofarr; i++) // очистка массива
+    {
+        if (arr[i]) free(arr[i]);
+    }
+    free(arr);
 }
 
 char* read_from_file(const char* filename, int* numberofval, int* numberofone) // done
 {
     FILE* fin = fopen(filename, "r");
-    (* numberofone) = 0;
+    (*numberofone) = 0;
     if (fin)
     {
         char trash;
@@ -120,7 +161,7 @@ char* read_from_file(const char* filename, int* numberofval, int* numberofone) /
     return NULL;
 }
 
-char* decToBinary(int n, int size) 
+char* decToBinary(int n, int size)
 {
     char* binaryNum = (char*)malloc((size + 1) * sizeof(char));
     char number_of_ones = '0';
@@ -137,7 +178,7 @@ char* decToBinary(int n, int size)
         n >>= 1; // сдвигаем число на одну позицию вправо
         i--;
     }
-    
+
     binaryNum[size] = number_of_ones; // записываем в виде символа кол-во единичек (для красоты)
     return binaryNum;
 }
@@ -159,22 +200,23 @@ char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone) //
     return vec_table;
 }
 
-char* merge_vectors(char* vec1, char* vec2, int size) 
+char* merge_vectors(char* vec1, char* vec2, int size)
 {
     char* result = (char*)malloc((size + 1) * sizeof(char));
-    
+
     int i;
-    for(i = 0; i < size; i++) {
-        if(vec1[i] != vec2[i]) {
+    for (i = 0; i < size; i++) {
+        if (vec1[i] != vec2[i]) {
             result[i] = '*';
-        } else {
+        }
+        else {
             result[i] = vec1[i];
         }
     }
     // записываем в конец количество единиц в наборе
-    if (vec1[i] > vec2[i]) result[i] = vec1[i]-1;
-    else result[i] = vec2[i]-1;
-    
+    if (vec1[i] > vec2[i]) result[i] = vec1[i] - 1; // записываем '0' или '1'
+    else result[i] = vec2[i] - 1 ;
+
     return result;
 }
 
@@ -185,5 +227,5 @@ int compare_two_vectors(char* vec1, char* vec2, int size) // done
     {
         if (vec1[i] != vec2[i]) differences++;
     }
-	return differences;
+    return differences;
 }
