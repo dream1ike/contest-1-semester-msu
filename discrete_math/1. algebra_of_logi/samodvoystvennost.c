@@ -112,14 +112,14 @@ void write_to_file(const char* filename, int answer)
 int main(int argc, const char* argv[])
 {
     clock_t start_time = clock();
-    if (argc == 3)
+    if (3)
     {
         int sizeofarr = 0;
         int numberofarr = 0;
-        int* polinom = read_polinom(argv[1], &sizeofarr, &numberofarr);
+        int* polinom = read_polinom("in.txt", &sizeofarr, &numberofarr);
         int answer = calc_self_duality(sizeofarr, polinom, numberofarr);
         // calc_and_write_table(sizeofarr, polinom, numberofarr);
-        write_to_file(argv[2], answer);
+        write_to_file("out.txt", answer);
         free(polinom);
     }
     clock_t end_time = clock(); 
