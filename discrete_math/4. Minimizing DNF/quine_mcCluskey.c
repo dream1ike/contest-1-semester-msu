@@ -15,9 +15,7 @@ char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone); /
 
 char* merge_vectors(char* vec1, char* vec2, int size);
 
-char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size); // in progress
-
-char** combining_strings(char** vec_table, int table_size, int numberofval); // in progress
+char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size, char* flag); // in progress
 
 int compare_two_vectors(char* vec1, char* vec2, int size); // done
 
@@ -40,25 +38,27 @@ int main(int argc, const char* argv[])
 		// конец вывода
         char** vec_table = find_one_and_group(numberofval, vec_of_val, numberofone);
 		int result_size = 0;
-		char** result = quine_minimizing(vec_table, table_size, numberofval, &result_size);
+        char flag = 'C';
+		while (flag != 'S') char** vec_table = quine_minimizing(vec_table, table_size, numberofval, &result_size, &flag);
 		// вывод массива
         for(int i = 0; i < result_size; i++)
         {
             for(int j = 0; j < numberofval; j++)
             {
-                printf("%c", result[i][j]);
+                printf("%c", vec_table[i][j]);
             }
             printf("\n");
         }
 		// конец вывода массива
 
-        free_two_demensional_char_arr(result, table_size);
+        free_two_demensional_char_arr(vec_table, table_size);
     }
     return 0;
 }
 
-char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size)
+char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size, char* flag)
 {
+    *flag = 'S';
 	char** result = NULL;
 	*result_size = 0;
 	int differences = 0;
@@ -71,6 +71,7 @@ char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* 
 				differences = compare_two_vectors(vec_table[i], vec_table[j], numberofval);
 				if (differences == 1)
 				{
+                    *flag = 'C';
 					*result_size += 1;
 					result = (char**)realloc(result, (*result_size) * sizeof(char*));
 					result[*result_size - 1] = merge_vectors(vec_table[i], vec_table[j], numberofval);
@@ -78,6 +79,11 @@ char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* 
 			}
 		}
 	}
+    if (*flag == 'S')
+    {
+        *result_size = table_size;
+        return vec_table;
+    }
 	free_two_demensional_char_arr(vec_table, table_size);
 	return result;
 }
@@ -156,6 +162,7 @@ char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone) //
 char* merge_vectors(char* vec1, char* vec2, int size) 
 {
     char* result = (char*)malloc((size + 1) * sizeof(char));
+    
     int i;
     for(i = 0; i < size; i++) {
         if(vec1[i] != vec2[i]) {
@@ -164,7 +171,10 @@ char* merge_vectors(char* vec1, char* vec2, int size)
             result[i] = vec1[i];
         }
     }
-    result[i] = '\0';
+    // записываем в конец количество единиц в наборе
+    if (vec1[i] > vec2[i]) result[i] = vec1[i]-1;
+    else result[i] = vec2[i]-1;
+    
     return result;
 }
 

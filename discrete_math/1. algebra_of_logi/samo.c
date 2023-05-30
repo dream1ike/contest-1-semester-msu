@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #pragma warning(disable:4996)
 
 char** read_from_file(const char* filename, int* sizeofconjunct, int* sizeofpolynom)
@@ -14,7 +15,7 @@ char** read_from_file(const char* filename, int* sizeofconjunct, int* sizeofpoly
 		fscanf(fin, "%c", &trash);
 		fscanf(fin, "%d", sizeofconjunct);
 		fscanf(fin, "%d", sizeofpolynom);
-		fscanf(fin, "%c", &trash);
+		while (fscanf(fin, "%c", &trash) == 1 && trash != '\n');
 		polinom = (char**)malloc(sizeof(char*) * (*sizeofpolynom)); // выделяем память под полином
  		for (int i = 0; i < *sizeofpolynom; i++)
 		{
@@ -84,22 +85,44 @@ int calc_polynom(int sizeofconjunct, int sizeofpolynom, char** polynom, char* se
 	return answer;
 }
 
-int calc_self_duality(int sizeofconjunct, int sizeofpolynom, char** polynom)
-{
-	double numberofsets = pow(2, (double)sizeofconjunct-1);
-	char* set = (char*)malloc(sizeofconjunct * sizeof(char)); // набор, на котором мы проверяем полином
-	int f_set, mirror_f_set; // значения функции на наборе и на зеркальном наборе
-	for (int i = 0; i < numberofsets; i++)
-	{
-		decToBinary(i, sizeofconjunct, set);
-		f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+int calc_self_duality(int sizeofconjunct, int sizeofpolynom, char** polynom) {
+	char* set = (char*)malloc(sizeof(char) * sizeofconjunct);
+	char* mirror_set = (char*)malloc(sizeof(char) * sizeofconjunct);
+	int f_set, mirror_f_set;
+    // Инициализация начального набора
+    for (int i = 0; i < sizeofconjunct; i++) {
+        set[i] = '0';
+    }
+
+    while (set[0] != '1') { // Цикл генерации наборов, пока самый последний разряд не равен 1 [1,0,0]
+        f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
 		create_mirror_set(sizeofconjunct, set);
 		mirror_f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+		// Условие самодвойственности
 		if (f_set == mirror_f_set)
 		{
 			free(set);
 			return 0;
 		}
+
+		create_mirror_set(sizeofconjunct, set); // возвращаем массив в исходный вид
+		// Поиск позиции для изменения. 
+		// ищем позицию в наборе, на которой стоит 0, начиная с конца.
+		// меняем найденное значение 0 на 1 и сбрасываем все значения после этой позиции до 0
+		int j = sizeofconjunct - 1;
+        while (set[j] != '0' && j > 0) {
+            set[j] = '0';
+            j--;
+        }
+        set[j] = '1';
+    }
+	f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+	create_mirror_set(sizeofconjunct, set);
+	mirror_f_set = calc_polynom(sizeofconjunct, sizeofpolynom, polynom, set);
+	if (f_set == mirror_f_set)
+	{
+		free(set);
+		return 0;
 	}
 	free(set);
 	return 1;
@@ -117,14 +140,18 @@ void write_number_to_file(const char* filename, int number)
 
 int main(int argc, char* argv[])
 {
-	if (3)
+    clock_t start_time = clock();
+	if (argc == 3)
 	{
 		int sizeofpolynom, sizeofconjunct;
-		char** polynom = read_from_file("in.txt", &sizeofconjunct, &sizeofpolynom);
+		char** polynom = read_from_file(argv[1], &sizeofconjunct, &sizeofpolynom);
 		int answer = calc_self_duality(sizeofconjunct, sizeofpolynom, polynom);
-		write_number_to_file("out.txt", answer);
+		write_number_to_file(argv[2], answer);
 		free_two_demensional_char_arr(polynom, sizeofpolynom);
 	}
+	clock_t end_time = clock(); 
+    double elapsed_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+     printf("Elapsed time: %f seconds\n", elapsed_time);
 	return 0;
 }
 
