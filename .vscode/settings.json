@@ -1,6 +1,7 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
-        "bitset": "c"
+        "bitset": "c",
+        "__locale": "c"
     }
 }
