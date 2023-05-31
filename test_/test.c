@@ -30,11 +30,11 @@ char** read_and_find_groups(const char* filename, int* numberofval, int* numbero
 
 int main(int argc, const char* argv[])
 {
+	clock_t start_time = clock();
     if (3)
-    {
+    { 
         int numberofval, numberofone;
         char** vec_table = read_and_find_groups("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file2.txt", &numberofval, &numberofone);
-
         int table_size = numberofone;
         int result_size = 0;
         char flag = 'C';
@@ -48,6 +48,9 @@ int main(int argc, const char* argv[])
 
         free_two_demensional_char_arr(vec_table, table_size);
     }
+	clock_t end_time = clock(); 
+    double elapsed_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+     printf("Elapsed time: %f seconds\n", elapsed_time);
     return 0;
 }
 
@@ -189,6 +192,7 @@ char* merge_vectors(char* vec1, char* vec2, int size)
 int compare_two_vectors(char* vec1, char* vec2, int size) // done
 {
     int differences = 0; // счетчик, который отвечает за количество разных элементов
+
     for (int i = 0; i < size; i++)
     {
         if (vec1[i] != vec2[i]) differences++;

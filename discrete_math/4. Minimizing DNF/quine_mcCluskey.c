@@ -5,13 +5,13 @@
 #include <string.h>
 #pragma warning(disable:4996)
 
+char* decToBinary(int n, int size);
+
 char* copy_char_arr(char* original, int size);
 
 void free_two_demensional_char_arr(char** arr, int sizeofarr);
 
-char* read_from_file(const char* filename, int* numberofval, int* numberofone);
-
-char* decToBinary(int n, int size);
+char** read_from_file(const char* filename, int* numberofval, int* numberofone);
 
 char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone);
 
@@ -25,14 +25,17 @@ void write_to_file_two_dementional_char_arr(const char* filename, char** vec, in
 
 void sort_2d_array(char **arr, int table_size, int vector_size);
 
+char** read_and_find_groups(const char* filename, int* numberofval, int* numberofone); // done
+
+
 int main(int argc, const char* argv[])
 {
     if (argc == 3)
     {
         int numberofval, numberofone;
-        char* vec_of_val = read_from_file(argv[1], &numberofval, &numberofone);
+        char** vec_table = read_and_find_groups(argv[1], &numberofval, &numberofone);
+
         int table_size = numberofone;
-        char** vec_table = find_one_and_group(numberofval, vec_of_val, numberofone);
         int result_size = 0;
         char flag = 'C';
         while (flag != 'S')
@@ -111,30 +114,6 @@ void free_two_demensional_char_arr(char** arr, int sizeofarr) // done
     }
     free(arr);
 }
-
-char* read_from_file(const char* filename, int* numberofval, int* numberofone) // done
-{
-    FILE* fin = fopen(filename, "r");
-    (*numberofone) = 0;
-    if (fin)
-    {
-        char trash;
-        fscanf(fin, "%d", numberofval); // считываем k-значность логики
-        fscanf(fin, "%d", numberofval); // кол-во переменных
-        fscanf(fin, "%c", &trash); // считываем пробел
-        int size = 1 << (*numberofval);
-        char* vec_of_val = (char*)malloc(sizeof(char) * size);
-        for (int i = 0; i < size; i++)
-        {
-            fscanf(fin, "%c", &vec_of_val[i]);
-            if (vec_of_val[i] == '1') (*numberofone)++;
-        }
-        fclose(fin);
-        return vec_of_val;
-    }
-    return NULL;
-}
-
 char* decToBinary(int n, int size)
 {
     char* binaryNum = (char*)malloc((size + 1) * sizeof(char));
@@ -157,22 +136,35 @@ char* decToBinary(int n, int size)
     return binaryNum;
 }
 
-char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone) // done
+char** read_and_find_groups(const char* filename, int* numberofval, int* numberofone) // done
 {
-    char** vec_table = (char**)malloc(sizeof(char*) * numberofone);
-    int j = 0;
-    int size = 1 << numberofval;
-    for (int i = 0; i < size; i++)
+    FILE* fin = fopen(filename, "r");
+    (*numberofone) = 0;
+    char** vec_table = NULL;
+    if (fin)
     {
-        if (vec_of_val[i] == '1')
+        char trash;
+        fscanf(fin, "%d", numberofval); // read k-value of logic
+        fscanf(fin, "%d", numberofval); // number of variables
+        fscanf(fin, "%c", &trash); // read space
+        int size = 1 << (*numberofval);
+        char* vec_of_val = (char*)malloc(sizeof(char) * size);
+        for (int i = 0; i < size; i++)
         {
-            vec_table[j] = decToBinary(i, numberofval);
-            j++;
+            fscanf(fin, "%c", &vec_of_val[i]);
+            if (vec_of_val[i] == '1')
+            {
+                (*numberofone)++;
+                vec_table = (char**)realloc(vec_table, sizeof(char*) * (*numberofone));
+                vec_table[(*numberofone) - 1] = decToBinary(i, *numberofval);
+            }
         }
+		free(vec_of_val);
+        fclose(fin);
     }
-    free(vec_of_val);
     return vec_table;
 }
+
 
 char* merge_vectors(char* vec1, char* vec2, int size)
 {
@@ -200,6 +192,7 @@ int compare_two_vectors(char* vec1, char* vec2, int size) // done
     for (int i = 0; i < size; i++)
     {
         if (vec1[i] != vec2[i]) differences++;
+		if (differences > 1) return differences;
     }
     return differences;
 }
