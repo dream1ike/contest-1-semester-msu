@@ -28,10 +28,10 @@ char** delete_similar_arrays(char** vec_table, int table_size, int numberofval, 
 int main(int argc, const char* argv[])
 {
     clock_t start_time = clock();
-    if (3)
+    if (argc == 3)
     {
         int numberofval, numberofone;
-        char** vec_table = read_and_find_groups("in.txt", &numberofval, &numberofone);
+        char** vec_table = read_and_find_groups(argv[1], &numberofval, &numberofone);
         int table_size = numberofone;
         int result_size = 0;
         char flag = 'F';
@@ -43,7 +43,7 @@ int main(int argc, const char* argv[])
         vec_table = delete_similar_arrays(vec_table, table_size, numberofval, &result_size);
         table_size = result_size;
         sort_2d_array(vec_table, table_size, numberofval);
-        write_to_file_two_dementional_char_arr("out.txt", vec_table, result_size, numberofval);
+        write_to_file_two_dementional_char_arr(argv[2], vec_table, result_size, numberofval);
         free_two_demensional_char_arr(vec_table, table_size);
     }
     clock_t end_time = clock();
