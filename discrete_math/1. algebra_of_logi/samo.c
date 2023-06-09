@@ -117,14 +117,15 @@ void write_number_to_file(const char* filename, int number)
 
 int main(int argc, char* argv[])
 {
-	if (3)
+	if (argc == 3)
 	{
 		int sizeofpolynom, sizeofconjunct;
 		char** polynom = read_from_file("in.txt", &sizeofconjunct, &sizeofpolynom);
 		int answer = calc_self_duality(sizeofconjunct, sizeofpolynom, polynom);
 		write_number_to_file("out.txt", answer);
 		free_two_demensional_char_arr(polynom, sizeofpolynom);
+		return 0;
 	}
-	return 0;
+	return 1;
 }
 

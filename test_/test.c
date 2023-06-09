@@ -1,244 +1,158 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
-#include <string.h>
-#pragma warning(disable:4996)
 
-char* decToBinary(int n, int size);
-
-char* copy_char_arr(char* original, int size);
-
-void free_two_demensional_char_arr(char** arr, int sizeofarr);
-
-char** read_from_file(const char* filename, int* numberofval, int* numberofone);
-
-char** find_one_and_group(int numberofval, char* vec_of_val, int numberofone);
-
-char* merge_vectors(char* vec1, char* vec2, int size);
-
-char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size, char* flag);
-
-int compare_two_vectors(char* vec1, char* vec2, int size);
-
-void write_to_file_two_dementional_char_arr(const char* filename, char** vec, int table_size, int vector_size);
-
-void sort_2d_array(char **arr, int table_size, int vector_size);
-
-char** read_and_find_groups(const char* filename, int* numberofval, int* numberofone); // done
-
-
-int main(int argc, const char* argv[])
+int check_number_in_set(int* set, int set_size, int number)
 {
-	clock_t start_time = clock();
-    if (3)
-    { 
-        int numberofval, numberofone;
-        char** vec_table = read_and_find_groups("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file2.txt", &numberofval, &numberofone);
-        int table_size = numberofone;
-        int result_size = 0;
-        char flag = 'C';
-        while (flag != 'S')
-        {
-            vec_table = quine_minimizing(vec_table, table_size, numberofval, &result_size, &flag);
-            table_size = result_size;
-        }
-		sort_2d_array(vec_table, table_size, numberofval);
-		write_to_file_two_dementional_char_arr("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file1.txt", vec_table, result_size, numberofval);
-
-        free_two_demensional_char_arr(vec_table, table_size);
+    for(int i = 0; i < set_size; i++)
+    {
+        if (number == set[i]) return 1;
     }
-	clock_t end_time = clock(); 
-    double elapsed_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
-     printf("Elapsed time: %f seconds\n", elapsed_time);
     return 0;
 }
 
-char** quine_minimizing(char** vec_table, int table_size, int numberofval, int* result_size, char* flag)
-{
-    *flag = 'S';
-    char** result = NULL;
-    *result_size = 0;
-    int differences = 0;
-	int* number_of_merge = (int*)malloc(sizeof(int) * table_size); // количество слияний определенной строки
-    for (int i = 0; i < table_size; i++) number_of_merge[i] = 0;
-    for (int i = 0; i < table_size; i++)
-    {
-        for (int j = i + 1; j < table_size; j++)
-        {
-            if (abs(vec_table[i][numberofval] - vec_table[j][numberofval]) <= 1) // соседние (по единичкам) подгруппы
-            {
-                differences = compare_two_vectors(vec_table[i], vec_table[j], numberofval);
-                if (differences == 1)
-                {
-					number_of_merge[i]++;
-					number_of_merge[j]++;
-                    *flag = 'C';
-                    *result_size += 1;
-                    result = (char**)realloc(result, (*result_size) * sizeof(char*));
-                    result[*result_size - 1] = merge_vectors(vec_table[i], vec_table[j], numberofval);
-                }
-                if (differences == 0)
-                {
-					number_of_merge[i]++;
-					number_of_merge[j]++;
-                    *flag = 'C';
-                    *result_size += 1;
-                    result = (char**)realloc(result, (*result_size) * sizeof(char*));
-                    result[*result_size - 1] = copy_char_arr(vec_table[i], numberofval + 1);
-
-                }
-            }
-        }
-		if (number_of_merge[i] == 0)
-		{
-			*result_size += 1;
-            result = (char**)realloc(result, (*result_size) * sizeof(char*));
-            result[*result_size - 1] = copy_char_arr(vec_table[i], numberofval + 1);
-		}
-    }
-    free_two_demensional_char_arr(vec_table, table_size);
-    return result;
-}
-
-
-char* copy_char_arr(char* original, int size)
-{
-    char* result = (char*)malloc(sizeof(char*) * size);
-    for (int i = 0; i < size; i++) result[i] = original[i];
-    return result;
-}
-
-void free_two_demensional_char_arr(char** arr, int sizeofarr) // done
-{
-    for (int i = 0; i < sizeofarr; i++) // очистка массива
-    {
-        if (arr[i]) free(arr[i]);
-    }
-    free(arr);
-}
-char* decToBinary(int n, int size)
-{
-    char* binaryNum = (char*)malloc((size + 1) * sizeof(char));
-    char number_of_ones = '0';
-
-    // инициализируем массив нулями
-    for (int i = 0; i < size; i++) {
-        binaryNum[i] = '0';
-    }
-
-    int i = size - 1;
-    while (n > 0 && i >= 0) {
-        if ((n & 1) == 1) number_of_ones++; // считаем кол-во единичек
-        binaryNum[i] = (n & 1) + '0'; // устанавливаем биты числа и переводим их в символы '0' или '1
-        n >>= 1; // сдвигаем число на одну позицию вправо
-        i--;
-    }
-
-    binaryNum[size] = number_of_ones; // записываем в виде символа кол-во единичек (для красоты)
-    return binaryNum;
-}
-
-char** read_and_find_groups(const char* filename, int* numberofval, int* numberofone) // done
-{
+int* read_vector_table(const char* filename, int* k, int* n, int* vec_size) {
     FILE* fin = fopen(filename, "r");
-    (*numberofone) = 0;
-    char** vec_table = NULL;
-    if (fin)
+    char trash;
+    fscanf(fin, "%d", k);
+    fscanf(fin, "%d", n);
+    fscanf(fin, "%c", &trash);
+    // Вычисляем количество строк в таблице истинности
+    *vec_size = (int)pow((*k), (*n));
+    int* table = (int*)malloc(sizeof(int) * (*vec_size));
+    for (int i = 0; i < *vec_size; i++)
     {
-        char trash;
-        fscanf(fin, "%d", numberofval); // read k-value of logic
-        fscanf(fin, "%d", numberofval); // number of variables
-        fscanf(fin, "%c", &trash); // read space
-        int size = 1 << (*numberofval);
-        char* vec_of_val = (char*)malloc(sizeof(char) * size);
-        for (int i = 0; i < size; i++)
-        {
-            fscanf(fin, "%c", &vec_of_val[i]);
-            if (vec_of_val[i] == '1')
-            {
-                (*numberofone)++;
-                vec_table = (char**)realloc(vec_table, sizeof(char*) * (*numberofone));
-                vec_table[(*numberofone) - 1] = decToBinary(i, *numberofval);
-            }
-        }
-		free(vec_of_val);
-        fclose(fin);
+        fscanf(fin, "%c", &trash);
+        if (trash >= 65) table[i] = trash - 55; // расшифровываем буквы
+        else table[i] = trash - '0';
     }
-    return vec_table;
+    
+    return table;
 }
 
+int compare(const void* a, const void* b) {
+    const int* arr1 = *(const int**)a;
+    const int* arr2 = *(const int**)b;
 
-char* merge_vectors(char* vec1, char* vec2, int size)
-{
-    char* result = (char*)malloc((size + 1) * sizeof(char));
+    int size1 = arr1[0];
+    int size2 = arr2[0];
 
-    int i;
-    for (i = 0; i < size; i++) {
-        if (vec1[i] != vec2[i]) {
-            result[i] = '*';
-        }
-        else {
-            result[i] = vec1[i];
-        }
+    int i = 1, j = 1;
+    while (i <= size1 && j <= size2) {
+        if (arr1[i] < arr2[j])
+            return -1;
+        else if (arr1[i] > arr2[j])
+            return 1;
+        
+        i++;
+        j++;
     }
-    // записываем в конец количество единиц в наборе
-    if (vec1[i] > vec2[i]) result[i] = vec1[i] - 1; // записываем '0' или '1'
-    else result[i] = vec2[i] - 1 ;
 
+    // Если один подмассив является префиксом другого
+    if (i <= size1)
+        return 1;
+    if (j <= size2)
+        return -1;
+
+    return 0;
+}
+
+// Функция для сортировки наборов в лексикографическом порядке
+void sortLexicographically(int** sets, int numSets) {
+    qsort(sets, numSets, sizeof(int*), compare);
+}
+
+int convert_to_decimal(int* arr, int k, int n) {
+    int result = 0;
+    for(int i = 0; i < n; i++) {
+        result += arr[i] * pow(k, n - i - 1);
+    }
     return result;
 }
 
-int compare_two_vectors(char* vec1, char* vec2, int size) // done
+void print_set(int* set, int size)
 {
-    int differences = 0; // счетчик, который отвечает за количество разных элементов
-
-    for (int i = 0; i < size; i++)
+    for(int i = 0; i < size; i++)
     {
-        if (vec1[i] != vec2[i]) differences++;
-		if (differences > 1) return differences;
+        printf("%d ", set[i]);
     }
-    return differences;
+    printf("\n");
 }
 
-void write_to_file_two_dementional_char_arr(const char* filename,char** vec, int table_size, int vector_size)
-{
-	FILE* fout = fopen(filename, "w");
-	fprintf(fout, "%d %d\n", vector_size, table_size);
-	for (int i = 0; i < table_size; i++)
-	{
-		for (int j = 0; j < vector_size; j++)
-		{
-			fprintf(fout, "%c", vec[i][j]);
-		}
-		fprintf(fout, "\n");
-	}
+int count_bits(int n) {
+    int count = 0;
+    while(n) {
+        count += n & 1;
+        n >>= 1;
+    }
+    return count;
 }
 
-void sort_2d_array(char **arr, int table_size, int vector_size) {
-    int i, j, k;
-    for (i = 0; i < table_size-1; i++) {
-        for (j = 0; j < table_size-i-1; j++) {
-            int is_greater = 0;
-            for (k = 0; k < vector_size; k++) {
-                if (arr[j][k] == '*' && arr[j+1][k] != '*') {
-                    is_greater = 1;
-                    break;
-                } else if (arr[j][k] != '*' && arr[j+1][k] == '*') {
-                    break;
-                } else if (arr[j][k] > arr[j+1][k]) {
-                    is_greater = 1;
-                    break;
-                } else if (arr[j][k] < arr[j+1][k]) {
-                    break;
-                }
-            }
-
-            if (is_greater) {
-                char *temp = arr[j];
-                arr[j] = arr[j+1];
-                arr[j+1] = temp;
+int** generate_subsets(int k, int n) {
+    int num_sets = 1 << k;
+    int **sets = (int**)malloc(num_sets * sizeof(int*));
+    for(int i = 0; i < num_sets; i++) {
+        int *set = (int*)malloc((n+1) * sizeof(int));
+        int set_size = 0;
+        for(int j = 0; j < k; j++) {
+            if(i & (1 << j)) {
+                set[set_size+1] = j;
+                set_size++;
             }
         }
+        set[0] = set_size;
+        sets[i] = set;
     }
+    return sets;
+}
+
+void generate_combinations(int* set, int set_size, int* vec_table, int table_size, int* combination, int n, int k, int index,  int* is_in_set) {
+    if(index == n) {
+        // Если достигнута нужная длина комбинации, выводим её
+
+        print_set(combination, n);
+
+        if (*is_in_set)
+        {
+        // узнаем индекс нужного нам элемента в вектор-таблице
+        int elem_index = convert_to_decimal(combination, n, k);
+        // проверка на вхождение во множество
+        *is_in_set = check_number_in_set(set, set_size, vec_table[elem_index]);
+        }
+
+        //printf("is_in_set: %d\n", *is_in_set);
+        return;
+    }
+    // Проходим по всем элементам множества и добавляем каждый из них на текущую позицию
+    for(int i = 0; i < set_size; i++) {
+        combination[index] = set[i];
+        generate_combinations(set, set_size, vec_table, table_size, combination, n, k, index + 1, is_in_set);
+    }
+}
+
+int main(int argc, const char* argv[]) {
+    if (3){
+        int k, n, table_size;
+        int is_in_set = 1;
+        FILE* fout = fopen("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file1.txt", "w");
+
+
+        int* vec_table = read_vector_table("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file2.txt", &k, &n, &table_size);
+        int* combination = (int*)malloc(n * sizeof(int));
+        int subset_count = 1 << k;
+        int** sets = generate_subsets(k, n);
+        subset_count--;
+        free(sets[subset_count]);
+        sortLexicographically(sets, subset_count);
+        for (int i = 1; i < subset_count; i++) {
+            printf("set: ");
+            print_set(&sets[i][1], sets[i][0]);
+            generate_combinations(&sets[i][1], sets[i][0], vec_table, table_size, combination, n, k, 0, &is_in_set);
+
+            printf("is_in_set: %d\n", is_in_set);
+            is_in_set = 1;
+            //free(sets[i]);
+        }
+    }
+    return 0;
 }
