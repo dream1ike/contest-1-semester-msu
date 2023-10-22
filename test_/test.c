@@ -1,158 +1,76 @@
 #include <stdio.h>
+#include "string.h"
 #include <stdlib.h>
 #include <math.h>
-
-int check_number_in_set(int* set, int set_size, int number)
+#pragma warning(disable:4996)
+// Структура Элемента
+char* get_first_dirname_from_path(char* path, int* t) // t - место, откуда нужно начать парсить (после слеша)
 {
-    for(int i = 0; i < set_size; i++)
+    char name_dir_static[33];
+    int size_of_name_dir = 0;
+    // Копируем имя во временный массив
+    while ((path[*t] != '/') && (*t < strlen(path)))
     {
-        if (number == set[i]) return 1;
+        name_dir_static[size_of_name_dir] = path[*t];
+        size_of_name_dir++;
+        *t += 1;
     }
-    return 0;
-}
-
-int* read_vector_table(const char* filename, int* k, int* n, int* vec_size) {
-    FILE* fin = fopen(filename, "r");
-    char trash;
-    fscanf(fin, "%d", k);
-    fscanf(fin, "%d", n);
-    fscanf(fin, "%c", &trash);
-    // Вычисляем количество строк в таблице истинности
-    *vec_size = (int)pow((*k), (*n));
-    int* table = (int*)malloc(sizeof(int) * (*vec_size));
-    for (int i = 0; i < *vec_size; i++)
+    // Пропускаем слеш
+    *t += 1;
+    char* dirName = (char*)malloc(sizeof(char) * size_of_name_dir);
+    for (int i = 0; i < size_of_name_dir; i++)
     {
-        fscanf(fin, "%c", &trash);
-        if (trash >= 65) table[i] = trash - 55; // расшифровываем буквы
-        else table[i] = trash - '0';
+        dirName[i] = name_dir_static[i];
     }
+    return dirName;
     
-    return table;
 }
 
-int compare(const void* a, const void* b) {
-    const int* arr1 = *(const int**)a;
-    const int* arr2 = *(const int**)b;
-
-    int size1 = arr1[0];
-    int size2 = arr2[0];
-
-    int i = 1, j = 1;
-    while (i <= size1 && j <= size2) {
-        if (arr1[i] < arr2[j])
-            return -1;
-        else if (arr1[i] > arr2[j])
-            return 1;
-        
-        i++;
-        j++;
-    }
-
-    // Если один подмассив является префиксом другого
-    if (i <= size1)
-        return 1;
-    if (j <= size2)
-        return -1;
-
-    return 0;
-}
-
-// Функция для сортировки наборов в лексикографическом порядке
-void sortLexicographically(int** sets, int numSets) {
-    qsort(sets, numSets, sizeof(int*), compare);
-}
-
-int convert_to_decimal(int* arr, int k, int n) {
-    int result = 0;
-    for(int i = 0; i < n; i++) {
-        result += arr[i] * pow(k, n - i - 1);
-    }
-    return result;
-}
-
-void print_set(int* set, int size)
+char** parser(char* path, int number_of_slashes, char** last_dir_name)
 {
-    for(int i = 0; i < size; i++)
+    char** directoryNames = (char**)malloc(sizeof(char*) * number_of_slashes);
+    int i = 0;
+    if (path[0] == '/')
     {
-        printf("%d ", set[i]);
+        directoryNames[0] = (char*)malloc(sizeof(char));
+        directoryNames[0][0] = '/';
+        i++;
     }
-    printf("\n");
+    // Временная переменная, которая нужна для вложенного while
+    int t = i;
+    // i < number_of_slashes потому, что мы специально не считываем последнюю директорию
+    // это нужно для create_dir
+    while (i < number_of_slashes)
+    {
+        directoryNames[i] = get_first_dirname_from_path(path, &t);
+        i++;
+    }
+    // имя последней директории (нужно для create_dir)
+    *last_dir_name = get_first_dirname_from_path(path, &t);
+    return directoryNames;
 }
 
-int count_bits(int n) {
-    int count = 0;
-    while(n) {
-        count += n & 1;
-        n >>= 1;
-    }
-    return count;
-}
 
-int** generate_subsets(int k, int n) {
-    int num_sets = 1 << k;
-    int **sets = (int**)malloc(num_sets * sizeof(int*));
-    for(int i = 0; i < num_sets; i++) {
-        int *set = (int*)malloc((n+1) * sizeof(int));
-        int set_size = 0;
-        for(int j = 0; j < k; j++) {
-            if(i & (1 << j)) {
-                set[set_size+1] = j;
-                set_size++;
-            }
-        }
-        set[0] = set_size;
-        sets[i] = set;
-    }
-    return sets;
-}
 
-void generate_combinations(int* set, int set_size, int* vec_table, int table_size, int* combination, int n, int k, int index,  int* is_in_set) {
-    if(index == n) {
-        // Если достигнута нужная длина комбинации, выводим её
+// For parser and get_first_dirname_from_path
+int main() {
+    int number_of_slashes = 3;
+    char* last_name;
+    char** names = parser("/123/asdf/ogo", number_of_slashes, &last_name);
 
-        print_set(combination, n);
-
-        if (*is_in_set)
+    for (int i = 0; i < number_of_slashes; i++)
+    {
+        for (int j = 0; j < strlen(names[i]); j++)
         {
-        // узнаем индекс нужного нам элемента в вектор-таблице
-        int elem_index = convert_to_decimal(combination, n, k);
-        // проверка на вхождение во множество
-        *is_in_set = check_number_in_set(set, set_size, vec_table[elem_index]);
+            printf("%c", names[i][j]);
         }
-
-        //printf("is_in_set: %d\n", *is_in_set);
-        return;
+        printf("\n");
+        
     }
-    // Проходим по всем элементам множества и добавляем каждый из них на текущую позицию
-    for(int i = 0; i < set_size; i++) {
-        combination[index] = set[i];
-        generate_combinations(set, set_size, vec_table, table_size, combination, n, k, index + 1, is_in_set);
-    }
-}
-
-int main(int argc, const char* argv[]) {
-    if (3){
-        int k, n, table_size;
-        int is_in_set = 1;
-        FILE* fout = fopen("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file1.txt", "w");
-
-
-        int* vec_table = read_vector_table("/Users/timurbajdadaev/Visual_Studio_Code/Contest/file2.txt", &k, &n, &table_size);
-        int* combination = (int*)malloc(n * sizeof(int));
-        int subset_count = 1 << k;
-        int** sets = generate_subsets(k, n);
-        subset_count--;
-        free(sets[subset_count]);
-        sortLexicographically(sets, subset_count);
-        for (int i = 1; i < subset_count; i++) {
-            printf("set: ");
-            print_set(&sets[i][1], sets[i][0]);
-            generate_combinations(&sets[i][1], sets[i][0], vec_table, table_size, combination, n, k, 0, &is_in_set);
-
-            printf("is_in_set: %d\n", is_in_set);
-            is_in_set = 1;
-            //free(sets[i]);
-        }
+    printf("----\n");
+    for (int j = 0; j < strlen(last_name); j++)
+    {
+        printf("%c", last_name[j]);
     }
     return 0;
 }

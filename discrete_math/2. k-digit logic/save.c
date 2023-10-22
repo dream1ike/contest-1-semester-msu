@@ -58,7 +58,7 @@ int main(int argc, const char* argv[]) {
 int* read_vector_table(const char* filename, int* k, int* n, int* vec_size) {
     FILE* fin = fopen(filename, "r");
     char trash;
-    fscanf(fin, "%d", k);
+    fscanf(fin, "%d", k); 
     fscanf(fin, "%d", n);
     fscanf(fin, "%c", &trash);
     // Вычисляем количество строк в таблице истинности

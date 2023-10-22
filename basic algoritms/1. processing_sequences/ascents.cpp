@@ -6,8 +6,8 @@
 int main(int argc, const char* argv[])
 {
 	if (argc == 3) {
-		FILE* fin = fopen(argv[1], "r");
-		FILE* fout = fopen(argv[2], "w");
+		FILE* fin = fopen("file1.txt", "r");
+		FILE* fout = fopen("file2.txt", "w");
 		if (fin && fout)
 		{
 			double elem1, elem2;
@@ -16,14 +16,21 @@ int main(int argc, const char* argv[])
 			{
 				while (fscanf(fin, "%lf", &elem2) > 0)
 				{
-					if (elem1 < elem2)
+					if (elem1 > elem2)
 					{
-						counter++;
+						elem1 = elem2;
+						while (fscanf(fin, "%lf", &elem2) > 0 && elem1 > elem2)
+						{
+							elem1 = elem2;
+						}
 					}
-					else// if (counter > 0) 
-// если у нас последовательность из одинаковых элементов, answer будет прибавляться каждый элемент
+					else
 					{
-						counter = 0;
+						elem1 = elem2;
+						while (fscanf(fin, "%lf", &elem2) > 0 && elem1 < elem2)
+						{
+							elem1 = elem2;
+						}
 						answer++;
 					}
 					elem1 = elem2;
