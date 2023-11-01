@@ -3,6 +3,7 @@
 #include <math.h>
 #pragma warning(disable:4996)
 typedef struct
+// create_dir("/dir1/dir2")
 {
 	double x1;
 	double y1;

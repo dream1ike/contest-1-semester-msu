@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include "os_file.h"
-
+#include <stdlib.h>
+#include "string.h"
+#pragma warning(disable:4996)
+#define MANAGER_SIZE
 // Структура Элемента
 typedef struct element
 {
@@ -24,26 +26,49 @@ typedef struct{
 FileManager MANAGER;
 
 // Initializing supporting functions
-int is_valid_path(char* path); // returns 0 if not ok, 1 if ok
 
-int is_path_absolute(char* path); // (helped go_to_path)
+int free_two_demension_char_arr(char** arr);
 
-char** parser(char* path, int number_of_slashes) // returns arr with dir names (helped go_to_path)
+void free_elements_array(element** arr, int number_of_kids); // free all dynamic memory
 
-element* create_element(char* name, int size, int isfile, element* parent);
+element* create_element(char name[], int size, int isfile, element* parent); // (checked) creating element
 
-element* find_elem(char** directoryNames, int size_directoryNames, element* root) // returns elem, that we trying to find (unsafe) (helped go_to_path)
+int checkFileManagerAvailability(int file_size);
 
-element* go_to_path(char* path); // main func, returns elem in path (second last), that we trying to find (safe)
+int is_valid_path(const char* path); // (checked) returns 0 if not ok, 1 if ok 
+
+int is_path_absolute(const char* path);  // (checked) (helped go_to_path) 
+
+char* get_first_dirname_from_path(const char* path, int* t); // (checked) returns arr with dir names (helped go_to_path) 
+
+element* find_elem(char** directoryNames, int size_directoryNames, element* root); // returns elem, that we trying to find (unsafe) (helped go_to_path) 
+
+element* go_to_path(const char* path, char** last_dir_name); // (checked) main func, returns elem in path (second last), that we trying to find (safe) 
+
+void add_kid_to_kids(element* parent, element* kid); // (checked) 
+
+void delete_element(element* node);
+
+void remove_recursive(element* node);
+
+char** secure_char_array_expansion(char** arr, int curr_size, int necessary_size);
+
+char* create_path(element* curr_dir);
 
 // ---------------------------------------------
 
 // Initializing main functions
-int my_create_dir(const char* path);
-
 int my_create(int disk_size);
 
-void my_get_cur_dir(char* dst);
+int my_destroy();
+
+int my_create_dir(const char* path);
+
+int my_create_file(const char* path, int file_size);
+
+int my_remove(const char* path, int recursive);
+
+int my_get_cur_dir(char* dst);
 
 void setup_file_manager(file_manager_t *fm);
 // ---------------------------------------------
@@ -51,17 +76,34 @@ void setup_file_manager(file_manager_t *fm);
 // Main
 int main()
 {
-    file_manager_t fm;
-
-    setup_file_manager(&fm);
-    int result = fm.create(10);
-    result = fm.destroy();
+    MANAGER.current_dir = NULL;
+    MANAGER.current_size = 0;
+    MANAGER.root = 0;
+    MANAGER.size = 0;
+    int result = 0;
+    result = my_create(100);
+    //_CrtDumpMemoryLeaks();
+    result = my_create_dir("/dir1");
+    //_CrtDumpMemoryLeaks();
+    result = my_create_file("/file1.txt", 10);
+    //_CrtDumpMemoryLeaks();
+    result = my_create_file("/file2.txt", 90);
+    _CrtDumpMemoryLeaks();
+    result = my_create_file("/file3.txt", 90);
+    //_CrtDumpMemoryLeaks();
+    char* dst = NULL;
+    my_get_cur_dir(dst);
+    my_destroy();
     return 0;
 }
 // ---------------------------------------------
 
 // Setup func
 void setup_file_manager(file_manager_t *fm) {
+    MANAGER.current_dir = NULL;
+    MANAGER.current_size = 0;
+    MANAGER.root = 0;
+    MANAGER.size = 0;
     fm->create = my_create;
     fm->destroy = my_destroy;
     fm->get_cur_dir = my_get_cur_dir;
@@ -70,6 +112,23 @@ void setup_file_manager(file_manager_t *fm) {
 // ---------------------------------------------
 
 // Supporting func
+
+int free_two_demension_char_arr(char** arr)
+{
+    int size = sizeof(arr) / sizeof(char*);
+    for (int i = 0; i < size; i++)
+    {
+        free(arr[i]);
+    }
+    free(arr);
+    return 1;
+}
+
+int checkFileManagerAvailability(int file_size)
+{
+    return !((MANAGER.size < MANAGER.current_size + file_size) && MANAGER.root);
+}
+
 int is_valid_path(const char* path) // worked!
 {
     int last_slash_index = -2; // -2 чтобы уж точно не было случайной разницы между индексами
@@ -128,12 +187,16 @@ char* get_first_dirname_from_path(const char* path, int* t) // t - место, �
     }
     // ѕропускаем слеш
     *t += 1;
-    char* dirName = (char*)malloc(sizeof(char) * (size_of_name_dir+1));
-    for (int i = 0; i < size_of_name_dir; i++)
+    int size_dirName = size_of_name_dir + 1;
+    name_dir_static[size_of_name_dir] = '\0';
+    
+    char* dirName = (char*)malloc(sizeof(char) * (size_dirName));
+    strcpy(dirName, name_dir_static);
+    /*for (int i = 0; i < size_of_name_dir; i++)
     {
         dirName[i] = name_dir_static[i];
-    }
-    dirName[size_of_name_dir] = '\0';
+    }*/
+    // dirName[size_of_name_dir] = '\0';
     return dirName;
 
 }
@@ -159,35 +222,50 @@ char** parser(const char* path, int number_of_slashes, char** last_dir_name) // 
 
 element* find_elem(char** directoryNames, int size_directoryNames, element* root)
 {
+    int result = 1;
     element* result_directory = root;
     for (int i = 0; i < size_directoryNames; i++)
     {
+        if (!strcmp(directoryNames[i], "/"))
+        {
+            return MANAGER.root;
+        }
+
+        if (!strcmp(directoryNames[i], ".")) continue;
+
+        if (!strcmp(directoryNames[i], ".."))
+        {
+            result_directory = result_directory->parent;
+        }
         for (int j = 0; j < result_directory->number_of_kids; j++)
         {
             element* kid = result_directory->kids[j];
             if (!strcmp(directoryNames[i], kid->name))
             {
-                // ≈сли нашли директорию с таким именем
+                // Если нашли директорию с таким именем
                 result_directory = kid;
                 break;
             }
         }
         // ≈сли не нашли нужную директорию
-        if (strcmp(directoryNames[i], result_directory->name)) return 0;
+        if (strcmp(directoryNames[i], result_directory->name)) return NULL;
+        //free_two_demension_char_arr(directoryNames);
+        //return result;
     }
     return result_directory;
 }
 
 element* go_to_path(const char* path, char** last_dir_name) // last_dir_name нужен дл€ create_dir
 {
-    element* root = MANAGER.current_dir;
-    if (is_path_absolute(path)) root = MANAGER.root;
     int number_of_slashes = is_valid_path(path);
     if (number_of_slashes)
     {
         char** directoryNames = parser(path, number_of_slashes, last_dir_name);
         if (!directoryNames) return 0;
-        return find_elem(directoryNames, number_of_slashes, root);
+        element* r = MANAGER.root;
+        element* result = find_elem(directoryNames, number_of_slashes, is_path_absolute(path) ? MANAGER.root : MANAGER.current_dir);
+        free_two_demension_char_arr(directoryNames);
+        return result;
     }
     else
     {
@@ -195,47 +273,123 @@ element* go_to_path(const char* path, char** last_dir_name) // last_dir_name н�
     }
 }
 
-element* create_element(char* name, int size, int isfile, element* parent)
+element* create_element(char name[], int size, int isfile, element* parent)
 {
     element* elem = (element*)malloc(sizeof(element));
-    elem->name = name;
-    elem->size = size;
-    elem->isfile = isfile;
-    elem->number_of_kids = 0;
-    elem->kids = NULL;
-    elem->parent = parent;
+    if (elem)
+    {
+        elem->name = name;
+        elem->size = size;
+        elem->isfile = isfile;
+        elem->number_of_kids = 0;
+        elem->kids = NULL;
+        elem->parent = parent;
+        if (parent)
+            parent->number_of_kids += 1;
+    }
     return elem;
 }
 
-void add_kid_to_kids(element* parent, element* kid)
+void add_kid_to_kids(element* parent, element* kid) // изменить
 {
     parent->number_of_kids++;
-    parent->kids = (element**)realloc(parent->kids, parent->number_of_kids);
+    int size_kids_old = sizeof(parent->kids) / sizeof(element*);
+    element** new_kids_arr = (element**)malloc((parent->number_of_kids) * sizeof(element*));
+    for (int i = 0; i < size_kids_old; i++)
+    {
+        new_kids_arr[i] = parent->kids[i];
+    }
+    new_kids_arr[size_kids_old] = kid;
+    free_elements_array(parent->kids, parent->number_of_kids);
+    parent->kids = new_kids_arr;
     parent->kids[parent->number_of_kids - 1] = kid;
+}
+
+void free_elements_array(element** arr, int number_of_kids)
+{
+    for (int i = 0; i < number_of_kids; i++)
+    {
+        free(arr[i]);
+    }
+}
+
+void delete_element(element* node)
+{
+    free(node->name);
+    free_elements_array(node->kids, node->number_of_kids);
+    MANAGER.current_size -= node->size;
+    free(node->parent);
+}
+
+void remove_recursive(element* node)
+{
+    if (node->number_of_kids == 0)
+    {
+        delete_element(node);
+        free(node);
+    }
+    else
+    {
+        for (int i = 0; i < node->number_of_kids; i++)
+        {
+            remove_recursive(node->kids[i]);
+        }
+    }
+}
+
+char** secure_char_array_expansion(char** arr, int curr_size, int necessary_size) // првоерить тщательно
+{
+    char** new_arr = (char**)malloc(sizeof(char*) * necessary_size);
+    if (!new_arr) return NULL;
+    for (int i = 0; i < curr_size; i++)
+    {
+        new_arr[i] = arr[i];
+    }
+    return new_arr;
+}
+
+char* create_path(element* curr_dir)
+{
+    // собираем полный путь в массив (идем с нашей директории, поэтому он будет задом наперед)
+    // собираем в одну строчку задом наперед со всеми /
+    // либо
+    // с начала ищем нужную директорию
+    element* root = curr_dir;
+    char** whole_path_reversed = (char**)malloc(sizeof(char*));
+    int path_length = 0;
+    do
+    {
+        whole_path_reversed = secure_char_array_expansion(whole_path_reversed, path_length, path_length + 1);
+        if (!whole_path_reversed) return NULL;
+        whole_path_reversed[path_length] = root->name;
+        root = root->parent;
+        path_length++;
+    } while (root != NULL);
+    // создаем с запасом
+    char* whole_path[129];
+    whole_path[0] = '\0';
+    // проверить, охватывает ли это весь путь, или надо написать i >= path_lenght
+    if (path_length >= 129) return NULL;
+    for (int i = path_length - 1; i >= path_length-1; i--)
+    {
+        strcat(whole_path, whole_path_reversed[i]);
+    }
+    whole_path[path_length] = '\0';
+    int len = strlen(whole_path);
+    // len + 1 потому что еще есть '/0'
+    char* result = (char*)malloc(sizeof(char) * (len + 1));
+    if (!result) return NULL;
+    strcpy(result, whole_path);
+    return result;
 }
 // ---------------------------------------------
 
 // My func
-int my_create_dir(const char* path)
-{
-    char* last_dir_name;
-    element* curr_dir = go_to_path(path, &last_dir_name);
-    if (!curr_dir) return 0;
-    element* new_dir = (element*)malloc(sizeof(element));
-    add_kid_to_kids(curr_dir, new_dir);
-    new_dir->name = last_dir_name;
-    new_dir->size = 0;
-    new_dir->isfile = 0;
-    new_dir->number_of_kids = 0;
-    new_dir->kids = NULL;
-    new_dir->parent = curr_dir;
-    return 1;
-}
 
 int my_create(int disk_size)
 {
-    // ѕроверка, если менеджер уже создавалс€
-    if (MANAGER.root) return 0;
+    // проверка, если менеджер уже создавался
+    if (!checkFileManagerAvailability(0)) return 0;
     MANAGER.size = disk_size;
     element* root = create_element("/", 0, 0, NULL);
     MANAGER.root = root;
@@ -243,13 +397,56 @@ int my_create(int disk_size)
     return 1;
 }
 
-//************************************************
-
 int my_destroy()
 {
+    // будет ли работать my_destroy
+    if (!checkFileManagerAvailability(0)) return 0;
+    if (!MANAGER.root) return 0;
+    remove_recursive(MANAGER.root);
     return 1;
 }
 
-void my_get_cur_dir(char* dst) {
-    strcpy(dst, "test");
+int my_create_dir(const char* path)
+{
+    if (!checkFileManagerAvailability(0)) return 0;
+    char* last_dir_name;
+    element* curr_dir = go_to_path(path, &last_dir_name);
+    _CrtDumpMemoryLeaks();
+    if (!curr_dir) return 0;
+    element* new_dir = create_element(last_dir_name, 0, 0, curr_dir);
+    add_kid_to_kids(curr_dir, new_dir);
+    return 1;
 }
+
+int my_create_file(const char* path, int file_size)
+{
+    if (!checkFileManagerAvailability(file_size)) return 0;
+    MANAGER.current_size += file_size;
+    char* last_file_name;
+    element* curr_dir = go_to_path(path, &last_file_name);
+    if (!curr_dir) return 0;
+    element* new_file = create_element(last_file_name, file_size, 1, curr_dir);
+    add_kid_to_kids(curr_dir, new_file);
+    return 1;
+}
+
+int my_remove(const char* path, int recursive)
+{
+    if (!checkFileManagerAvailability(0)) return 0;
+    char* last_file_name;
+    element* curr_dir = go_to_path(path, &last_file_name);
+    if (!curr_dir) return 0;
+    curr_dir = find_elem(&last_file_name, 1, curr_dir);
+    if (recursive) remove_recursive(curr_dir);
+    else delete_element(curr_dir);
+    return 1;
+}
+
+int my_get_cur_dir(char* dst) {
+    if (!checkFileManagerAvailability(0)) return 0;
+    dst = create_path(MANAGER.current_dir);
+    return 1;
+}
+//************************************************
+
+
