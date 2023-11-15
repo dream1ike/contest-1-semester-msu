@@ -83,7 +83,7 @@ int main() {
 
 	checkResult("mm.destroy_object(\"o4\");", mm.destroy_object("o4"), 1);
 	checkResult("mm.destroy_object(\"o2\");", mm.destroy_object("o2"), 1);
-
+	// checkResult("mm.destroy();", mm.destroy(), 1);
 	// Добавьте другие тесты по необходимости
 
 	cout << "Test 3 completed" << endl;

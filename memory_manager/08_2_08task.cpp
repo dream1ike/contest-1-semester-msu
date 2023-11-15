@@ -9,7 +9,7 @@ typedef struct element
 	char name[32];
 	int numb_of_links;
 	element* links[16];
-// g++ -x c++ -std=c++11 39_1_03main.cpp 39_1_03task.cpp -fsanitize=address -o out
+// g++ -x c++ -std=c++11 *main.cpp *task.cpp -fsanitize=address -o out
 }element;
 
 element* ARR = NULL;
@@ -141,6 +141,7 @@ void destroy_elem_and_shift_array(int index, int size)
 	int shift = 0;
 	int new_size = size - 1;
 	element* new_arr = (element*)malloc(sizeof(element) * (new_size));
+	printf("\nnew_arr malloced\n");
 	for (int i = 0; i < size; i++)
 	{
 		if (i == index)
@@ -153,6 +154,7 @@ void destroy_elem_and_shift_array(int index, int size)
 		}
 		copy_plus_vibe(&new_arr[i - shift], &ARR[i]);
 	}
+	printf("copied to new arr\n");
 	free(ARR);
 	if (new_size > 0)
 	{
@@ -163,6 +165,7 @@ void destroy_elem_and_shift_array(int index, int size)
 		}
 	}
 	free(new_arr);
+	printf("new arr free\n");
 }
 // ************************************
 
@@ -182,6 +185,7 @@ int my_destroy()
 	free(ARR);
 	return 1;
 }
+// дневники йона тихана
 
 int my_create_object(const char* name)
 {
