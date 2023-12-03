@@ -3,7 +3,6 @@
 #include "string.h"
 #include "os_mem.h"
 #include <iostream>
-#pragma warning(disable:4996)
 
 typedef struct element
 {
@@ -17,7 +16,7 @@ element* ARR = NULL;
 int NUM_OBJ_MAX = 0;
 int NUM_OBJ_CURR = 0;
 // Инициализация вспомогательных функций
-int removeElement(element* links[], int size, const char* targetName);
+void removeElement(element* links[], int size, const char* targetName);
 
 void copy_plus_vibe(element* destination, element* old_arr); // очень вайбовая фукнция, спасла весь код
 
@@ -65,11 +64,24 @@ void setup_memory_manager(memory_manager_t* mm) {
 // ************************************
 
 // мейн ого
+int main()
+{
+    my_create(10, 1);
+    my_create_object("o2");
+    my_create_object("o4");
+    my_link("o2", "o4");
+    my_link("o2", "o4");
+    my_destroy_object("o4");
+    my_destroy_object("o2");
+    int* arr = (int*)malloc(sizeof(arr) * 100);
+    my_destroy();
+    return 0;
+}
 // ************************************
 
 // Работа вспомогательных функций
 
-int removeElement(element* links[], int size, const char* targetName)
+void removeElement(element* links[], int size, const char* targetName)
 {
     // Поиск элемента по имени
     int indexToRemove = -1;
@@ -86,18 +98,17 @@ int removeElement(element* links[], int size, const char* targetName)
             break;
         }
     }
+
     // Если элемент найден, производим удаление и сдвиг
     if (indexToRemove != -1) {
         // Сдвигаем оставшиеся элементы
-        for (int i = indexToRemove; i < size - 1; ++i)
-        {
+        for (int i = indexToRemove; i < size - 1; ++i) {
             links[i] = links[i + 1];
         }
+
         // Последний элемент делаем NULL, так как мы его сдвинули
         links[size - 1] = NULL;
-        return 1;
     }
-    return 0;
 }
 
 void delete_all_links_to_obj_from_each_of_element_arr(char* name, int size)
@@ -111,8 +122,6 @@ void delete_all_links_to_obj_from_each_of_element_arr(char* name, int size)
         }
     }
 }
-// links[0] = ***
-// links[1] = NULL
 
 void copy_plus_vibe(element* destination, element* old_arr)
 {
@@ -120,7 +129,6 @@ void copy_plus_vibe(element* destination, element* old_arr)
     {
         destination->links[j] = old_arr->links[j];
     }
-    // memcpy(void *dst, const void *src, size_t n) - аналог copy_plus_vibe
     strcpy(destination->name, old_arr->name);
     destination->numb_of_links = old_arr->numb_of_links;
 }
@@ -130,7 +138,6 @@ int checkMemoryManagerAvilability(int new_elem)
     return ((NUM_OBJ_MAX) && (NUM_OBJ_CURR + new_elem <= NUM_OBJ_MAX));
 }
 
-// заменить
 void good_realloc(int new_size, int old_size)
 {
     if (!old_size)
@@ -139,8 +146,6 @@ void good_realloc(int new_size, int old_size)
         ARR = (element*)malloc(sizeof(element));
         return;
     }
-    // выделять в 2 раза больше памяти (с запасом) для высокой скорости
-    // realloc на меньшее количество замедляет программу.
     element* new_arr = (element*)malloc(sizeof(element) * new_size);
     for (int i = 0; i < old_size; i++)
     {
@@ -181,46 +186,29 @@ void destroy_elem_and_shift_array(int index, int size)
 {
     int shift = 0;
     int new_size = size - 1;
-    // подправить.
     element* new_arr = (element*)malloc(sizeof(element) * (new_size));
-    if (ARR[index].numb_of_links != 0)
-    {
-        delete_all_links_to_obj_from_each_of_element_arr(ARR[index].name, 16);
-    }
-    // Удаляем все ссылки
-    for (int j = 0; j < 16; j++)
-    {
-        if (ARR[index].links[j] != NULL)
-        {
-            ARR[index].links[j]->numb_of_links -= 1;
-            ARR[index].links[j] = NULL;
-        }
-        else
-        {
-            break;
-        }
-    }
+
     for (int i = 0; i < size; i++)
     {
         if (i == index)
         {
-            // нашли удаляемый элемент
             shift++;
+            int j = 0;
+            if (ARR[i].numb_of_links != 0)
+                delete_all_links_to_obj_from_each_of_element_arr(ARR[i].name, 16);
             continue;
         }
+
         copy_plus_vibe(&new_arr[i - shift], &ARR[i]);
-        // 0-0 1-1 2-2 3-4 4-5
     }
+
     free(ARR);
-    if (new_size > 0)
+    ARR = (element*)malloc(sizeof(element) * (new_size));
+    if (ARR)
     {
-        ARR = (element*)malloc(sizeof(element) * (new_size));
-        if (ARR)
+        for (int i = 0; i < new_size; i++)
         {
-            for (int i = 0; i < new_size; i++)
-            {
-                copy_plus_vibe(&ARR[i], &new_arr[i]);
-            }
+            copy_plus_vibe(&ARR[i], &new_arr[i]);
         }
     }
     free(new_arr);
@@ -240,7 +228,6 @@ int my_destroy()
 {
     if (!checkMemoryManagerAvilability(0)) return 0;
     NUM_OBJ_MAX = 0;
-    if (NUM_OBJ_CURR == 0) return 1;
     NUM_OBJ_CURR = 0;
     free(ARR);
     return 1;
@@ -302,48 +289,23 @@ int my_link(const char* object1_name, const char* object2_name)
 
 void my_print_objects()
 {
-    // Создаем копию массива для сортировки
-    element* sorted_arr = (element*)malloc(sizeof(element) * NUM_OBJ_CURR);
-    // Копируем содержимое arr в sorted_arr
+    if (!checkMemoryManagerAvilability(0)) return;
+    sort_strings_in_element(ARR, NUM_OBJ_CURR);
     for (int i = 0; i < NUM_OBJ_CURR; i++)
     {
-        copy_plus_vibe(&sorted_arr[i], &ARR[i]);
+        printf("%s\n", ARR[i].name);
+        printf("\n");
     }
-    // Сортируем sorted_arr по имени
-    sort_strings_in_element(sorted_arr, NUM_OBJ_CURR);
-
-    // Выводим отсортированные элементы
-    for (int i = 0; i < NUM_OBJ_CURR; i++)
-    {
-        printf("%s\n", sorted_arr[i].name);
-    }
-
-    // Освобождаем память, выделенную для sorted_arr
-    free(sorted_arr);
-
 }
 
 void print_link_counts()
 {
-    // Создаем копию массива для сортировки
-    element* sorted_arr = (element*)malloc(sizeof(element) * NUM_OBJ_CURR);
-
-    // Копируем содержимое arr в sorted_arr
+    if (!checkMemoryManagerAvilability(0)) return;
+    sort_strings_in_element(ARR, NUM_OBJ_CURR);
     for (int i = 0; i < NUM_OBJ_CURR; i++)
     {
-        copy_plus_vibe(&sorted_arr[i], &ARR[i]);
+        printf("%s,%d\n", ARR[i].name, ARR[i].numb_of_links);
+        printf("\n");
     }
-
-    // Сортируем sorted_arr по имени
-    sort_strings_in_element(sorted_arr, NUM_OBJ_CURR);
-
-    // Выводим отсортированные элементы
-    for (int i = 0; i < NUM_OBJ_CURR; i++)
-    {
-        printf("%s %d\n", sorted_arr[i].name, sorted_arr[i].numb_of_links);
-    }
-
-    // Освобождаем память, выделенную для sorted_arr
-    free(sorted_arr);
 }
 // ************************************
