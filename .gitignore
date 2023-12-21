@@ -50,4 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-test_/self_duality_1
+*.txt
+
+# Other files
+file_manager
+memory_manager
+test
