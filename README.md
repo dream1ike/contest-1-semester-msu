@@ -25,4 +25,15 @@ To interact with the program, input values into the "in.txt" file. The desired r
   - ✅ selection sort
   - ✅ shaker sort
 
+## [discrete_math](https://github.com/dream1ike/contest-1-semester-msu/tree/main/discrete_math "discrete_math") 
+
+- ###  [1. algebra_of_logi](https://github.com/dream1ike/contest-1-semester-msu/tree/main/discrete_math/1.%20algebra_of_logi "1. algebra_of_logi")
+	- ✅ samo && samodvoystvennost - Checks if a function from boolean algebra is self-dual. Implemented using multiple algorithms (arrays and boolean algebra operations in C).
+
+- ### [2. k-digit logic](https://github.com/dream1ike/contest-1-semester-msu/tree/main/discrete_math/2.%20k-digit%20logic "2. k-digit logic")
+	- ✅ save - Given a function's vector values in the input file, find all sets it preserves. Write each set to the output file as a separate line, ordered lexicographically.
+
+- ### [4. Minimizing DNF](https://github.com/dream1ike/contest-1-semester-msu/tree/main/discrete_math/4.%20Minimizing%20DNF "4. Minimizing DNF") 
+	- ✅ quine_mcCluskey - Given a function's vector values in the input file, construct its minimized Disjunctive Normal Form (DNF) using the Quine-McCluskey algorithm.
+
 Feel free to explore, contribute, and connect! Happy coding! 🚀🔍🔧
