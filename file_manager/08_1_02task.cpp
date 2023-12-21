@@ -4,7 +4,7 @@
 #include "os_file.h"
 #pragma warning(disable:4996)
 
-// g++ -x c++ -std=c++11 *task.cpp -fsanitize=address -o out
+// g++ -x c++ -std=c++11 *main* *task* -fsanitize=address -o out
 // DANGER! - места, где возможны утечки памяти
 
 // Константы
@@ -43,6 +43,10 @@ void add_kid_to_parent(element* parent, element* new_element);
 
 element* create_element(const char* name, int size, int isfile, element* parent);
 
+int containsAsterisk(const char* str);
+
+int match(const char* pattern, const char* string);
+
 element* find_element(const char* name, element* parent_path);
 
 element* go_to_path(const char* path);
@@ -54,6 +58,20 @@ void remove_element(element* need_to_remove);
 int remove_kid_element(element* parent_dir, char* remove_elem_name);
 
 void remove_recursive(element* destroyDir);
+
+// Функция для обмена указателями на элементы
+void swap(element** a, element** b);
+
+// Функция для сравнения элементов по полю name
+int compareElements(const element* a, const element* b);
+
+// Функция для сортировки пузырьком
+void bubbleSort(element** arr, int size);
+
+char** get_all_names_from_dir(element* parent_path, int dir_first);
+
+element* filter_elemets(element* parent_path, char* name);
+
 // Основные функции
 
 int my_create(int disk_size);
@@ -90,43 +108,6 @@ void setup_file_manager(file_manager_t* fm)
     fm->list = my_list;
 }
 
-//мейн (которого нет)
-//int main()
-//{
-//    MANAGER.max_size = ERROR_CODE;
-//    MANAGER.curr_size = ERROR_CODE;
-//    MANAGER.root = NULL;
-//    MANAGER.current_root = NULL;
-//    my_create(100);
-//    my_create_dir("/dir1");
-//    my_change_dir("/dir1");
-//    my_create_dir("dir2");
-//    my_change_dir("dir2");
-//    my_create_file("file1", 10);
-//    my_change_dir("/././dir1");
-//    my_create_file("file123", 10);
-//    my_change_dir("dir2");
-//    char* dst = (char*)malloc(sizeof(char*) * MAX_DIR_COUNT);
-//    my_get_curr_dir(dst);
-//    printf("Curr dir path:%s\n\n", dst);
-//    free(dst);
-//    my_change_dir("/././dir1");
-//    printf("Current root %s:\n", MANAGER.current_root->name);
-//    for (int i = 0; i < MANAGER.current_root->number_of_kids; i++)
-//    {
-//        if (MANAGER.current_root->kids[i]->isfile) printf("File: \"%s\" size = %d\n", MANAGER.current_root->kids[i]->name, MANAGER.current_root->kids[i]->size);
-//        else printf("Dir: %s\n", MANAGER.current_root->kids[i]->name);
-//    }
-//    printf("\nRoot:\n");
-//    for (int i = 0; i < MANAGER.root->number_of_kids; i++)
-//    {
-//        if (MANAGER.root->kids[i]->isfile) printf("File: %s size = %d\n", MANAGER.root->kids[i]->name, MANAGER.root->kids[i]->size);
-//        else printf("Dir: %s\n", MANAGER.root->kids[i]->name);
-//    }
-//    my_destroy();
-//    return 0;
-//}
-
 // реализация вспомогательных функций
 int IsNameCorrect(char* name)
 {
@@ -150,6 +131,17 @@ int checkFileManagerAvilability(int size_of_new_element)
     return ERROR_CODE;
 }
 
+int containsAsterisk(const char* str) 
+{
+    while (*str != '\0') {
+        if (*str == '*') {
+            return 1; // Символ '*' найден
+        }
+        str++;
+    }
+    return 0; // Символ '*' не найден
+}
+
 element* find_element(const char* name, element* parent_path)
 {
     if (!strcmp(".", name))
@@ -164,7 +156,6 @@ element* find_element(const char* name, element* parent_path)
     element** current_dir_kids = parent_path->kids;
     for (int i = 0; i < kids_size; i++)
     {
-        
         if (!strcmp(name, current_dir_kids[i]->name))
         {
             return current_dir_kids[i];
@@ -193,7 +184,6 @@ char** getDirectories(char* path, size_t* count)
     free(token);
     return directories;
 }
-
 
 element* go_to_path(const char* path)
 {
@@ -292,11 +282,9 @@ void add_kid_to_parent(element* parent, element* new_element)
     element** new_parent_kids = (element**)malloc(sizeof(element*) * (parent->number_of_kids + 1));
     for (int i = 0; i < parent->number_of_kids; i++)
     {
-        // new_parent_kids[i] = (element*)malloc(sizeof(element));
         new_parent_kids[i] = parent->kids[i];
     }
     // DANGER!
-    // new_parent_kids[parent->number_of_kids] = (element*)malloc(sizeof(element));
     new_parent_kids[parent->number_of_kids] = new_element;
     if (parent->kids != NULL)
     {
@@ -350,7 +338,6 @@ char* extract_last_name_from_path(const char* path) {
     return lastDirectory;
 }
 
-
 // Функция для объединения массива строк в одну строку с разделителями
 void joinStringsReverseWithRoot(char** strings, size_t count, const char* delimiter, char* dst) {
     size_t totalLength = 1; // Начальная длина для слеша в корне
@@ -387,8 +374,8 @@ void remove_element(element* need_to_remove)
     free(need_to_remove);
 }
 
-
-int remove_kid_element(element* parent_dir, char* remove_elem_name) {
+int remove_kid_element(element* parent_dir, char* remove_elem_name) 
+{
     if (parent_dir == NULL && !strcmp(remove_elem_name, "/"))
     {
         remove_element(MANAGER.root);
@@ -433,8 +420,10 @@ int remove_kid_element(element* parent_dir, char* remove_elem_name) {
             shift++;
             remove_element(kids[i]);
         }
-        if (i < (size) - shift)
+        if (i < (size)-shift)
+        {
             new_kids[i] = kids[i + shift];
+        }
     }
     free(parent_dir->kids);
     parent_dir->kids = new_kids;
@@ -464,6 +453,176 @@ void remove_recursive(element* node)
     }
 }
 
+int match(const char* pattern, const char* string)
+{
+    while (*pattern != '\0' && *string != '\0') {
+        if (*pattern == '*') {
+            // Обработка звездочки
+            while (*pattern == '*') {
+                pattern++;
+            }
+
+            if (*pattern == '\0') {
+                // Звездочка в конце шаблона - считаем, что она соответствует остатку строки
+                return 1;
+            }
+
+            while (*string != '\0' && *string != *pattern) {
+                string++;
+            }
+            // Если дошли до конца строки, но символы не совпали
+            if (*string == '\0' && *pattern != '\0')
+            {
+                return 0;
+            }
+        }
+        else if (*pattern == *string) {
+            pattern++;
+            string++;
+        }
+        else {
+            // Если символы не совпадают
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Функция для обмена указателями на элементы
+void swap(element** a, element** b)
+{
+    element* temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Функция для сравнения элементов по полю name
+int compareElements(const element* a, const element* b)
+{
+    return strcmp(a->name, b->name);
+}
+
+// Функция для сортировки пузырьком
+void bubbleSort(element** arr, int size)
+{
+    for (int i = 0; i < size - 1; ++i) {
+        for (int j = 0; j < size - i - 1; ++j) {
+            // Сравниваем элементы по полю name
+            if (compareElements(arr[j], arr[j + 1]) > 0) {
+                swap(&arr[j], &arr[j + 1]);
+            }
+        }
+    }
+}
+
+char** get_all_names_from_dir(element* parent_path, int dir_first)
+{
+    char** names = NULL;
+    int size = parent_path->number_of_kids;
+    element** arr = (element**)malloc(sizeof(element*) * size);
+
+    // Копируем во временный массив, чтобы не перемешались указатели
+    for (int i = 0; i < size; i++)
+    {
+        arr[i] = parent_path->kids[i];
+    }
+
+    bubbleSort(arr, size);
+
+    if (dir_first)
+    {
+        int dirs_number = 0;
+        int files_number = 0;
+
+        // Считаем, сколько всего файлов и директорий
+        for (int i = 0; i < size; i++)
+        {
+            if (!arr[i]->isfile) dirs_number++;
+            else files_number++;
+        }
+
+        // Создаем отдельный массив для файлов и директорий
+        element** arr_dirs = (element**)malloc(sizeof(element*) * dirs_number);
+        element** arr_files = (element**)malloc(sizeof(element*) * files_number);
+        int dirs_count = 0;
+        int files_count = 0;
+        for (int i = 0; i < size; i++)
+        {
+            if (!arr[i]->isfile)
+            {
+                arr_dirs[dirs_count] = arr[i];
+                dirs_count++;
+            }
+            else
+            {
+                arr_files[files_count] = arr[i];
+                files_count++;
+            }
+        }
+
+        // Соединяем в один массив
+        int arr_index = 0;
+
+        for (int i = 0; i < dirs_count; i++)
+        {
+            arr[arr_index] = arr_dirs[i];
+            arr_index++;
+        }
+
+        for (int i = 0; i < files_count; i++)
+        {
+            arr[arr_index] = arr_files[i];
+            arr_index++;
+        }
+        free(arr_dirs);
+        free(arr_files);
+
+    }
+    names = (char**)malloc(sizeof(char*) * size);
+    if (names)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            names[i] = strdup(arr[i]->name);
+        }
+    }
+    free(arr);
+    return names;
+
+}
+
+element* filter_elemets(element* parent_path, char* name)
+{
+    element* filtered_parent_path = (element*)malloc(sizeof(element));
+    filtered_parent_path->isfile = 0;
+    filtered_parent_path->parent = NULL;
+    filtered_parent_path->size = 0;
+    filtered_parent_path->number_of_kids = 0;
+    filtered_parent_path->kids = (element**)malloc(sizeof(element*) * parent_path->number_of_kids);
+    int filtered_index = 0;
+    for (int i = 0; i < parent_path->number_of_kids; i++)
+    {
+        if (match(name, parent_path->kids[i]->name))
+        {
+            filtered_parent_path->kids[filtered_index] = parent_path->kids[i];
+            filtered_index++;
+        }
+    }
+    // Если не нашлось по данному шаблону
+    if (!filtered_index)
+    {
+        free(filtered_parent_path->kids);
+        return NULL;
+    }
+    filtered_parent_path->number_of_kids = filtered_index;
+    filtered_index = 0;
+    if (filtered_parent_path->number_of_kids < parent_path->number_of_kids)
+    {
+        filtered_parent_path->kids = (element**)realloc(filtered_parent_path->kids, 
+                                    sizeof(element*) * filtered_parent_path->number_of_kids);
+    }
+    return filtered_parent_path;
+}
 // реализация основных функций
 int my_create(int disk_size)
 {
@@ -649,5 +808,62 @@ int my_remove(const char* path, int recursive)
 
 int my_list(const char* path, int dir_first)
 {
+    if (checkFileManagerAvilability(0) == ERROR_CODE) return 0;
+    element* parent_path = go_to_path(path);
+    if (parent_path == NULL) return 0;
+    char* name = extract_last_name_from_path(path);
+    // Если нет *
+    if (!containsAsterisk(name))
+    {
+        element* last_elem = find_element(name, parent_path);
+        // Если элемент не найден
+        if (last_elem == NULL)
+        {
+            free(name);
+            return 0;
+        }
+
+        
+        // Если элемент файл - выводим просто path
+        if (last_elem->isfile)
+        {
+            printf("%s", path);
+            free(name);
+            printf("\n");
+            return 1;
+        }
+
+        // Если элемент - директория
+        printf("%s:\n", path);
+        char** names = get_all_names_from_dir(last_elem, dir_first);
+        for (int i = 0; i < last_elem->number_of_kids; i++)
+        {
+            printf("%s\n", names[i]);
+            free(names[i]);
+        }
+        free(names);
+    }
+    else
+    {
+        element* filtered_parent_path = filter_elemets(parent_path, name);
+        if (filtered_parent_path == NULL)
+        {
+            free(name);
+            return 0;
+        }
+        printf("%s:\n", path);
+        char** names = get_all_names_from_dir(filtered_parent_path, dir_first);
+        for (int i = 0; i < filtered_parent_path->number_of_kids; i++)
+        {
+            printf("%s ", names[i]);
+            free(names[i]);
+        }
+        free(filtered_parent_path->kids);
+        free(filtered_parent_path);
+        free(names);
+    }
+    free(name);
+    printf("\n");
     return 1;
+
 }
